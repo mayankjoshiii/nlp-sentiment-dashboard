@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP Sentiment & Text Analytics Engine</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            padding: 2rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        select, input[type="date"] {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:hover, input[type="date"]:hover {
+            border-color: #8b5cf6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 2rem;
+            background: linear-gradient(180deg, #8b5cf6 0%, #ec4899 100%);
+            border-radius: 2px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, #1e293b 0%, #1a1f35 100%);
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #8b5cf6;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-change {
+            font-size: 0.875rem;
+            color: #10b981;
+        }
+
+        .sentiment-positive { color: #10b981; }
+        .sentiment-negative { color: #ef4444; }
+        .sentiment-neutral { color: #f59e0b; }
+
+        /* Chart Containers */
+        .chart-container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.3s;
+        }
+
+        .chart-container:hover {
+            border-color: #475569;
+        }
+
+        .chart-inner {
+            position: relative;
+            min-height: 400px;
+        }
+
+        /* Two-column layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(700px, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1400px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Three-column layout */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Review Explorer */
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .review-table thead {
+            background: #0f172a;
+            border-bottom: 2px solid #334155;
+        }
+
+        .review-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .review-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #334155;
+            font-size: 0.9rem;
+        }
+
+        .review-table tr:hover {
+            background: #0f172a;
+        }
+
+        .sentiment-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-positive {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .badge-negative {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .badge-neutral {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .sentiment-bar {
+            width: 100px;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .sentiment-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .topics-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .topic-tag {
+            background: rgba(139, 92, 246, 0.2);
+            color: #d8b4fe;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+        }
+
+        /* Alert Cards */
+        .alert-card {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .alert-content h3 {
+            color: #ef4444;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-content p {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid #334155;
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 3rem;
+        }
+
+        footer a {
+            color: #8b5cf6;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Plotly customization */
+        .plotly-graph-div {
+            background: transparent !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            select, input[type="date"] {
+                width: 100%;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .review-table {
+                font-size: 0.8rem;
+            }
+
+            .review-table th, .review-table td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+
+        .spinner {
+            border: 3px solid #334155;
+            border-top: 3px solid #8b5cf6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>NLP Sentiment & Text Analytics Engine</h1>
+            <div class="controls">
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Home & Kitchen">Home & Kitchen</option>
+                    <option value="Beauty">Beauty</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Books">Books</option>
+                </select>
+                <input type="date" id="dateFrom" value="2024-01-01">
+                <input type="date" id="dateTo" value="2024-12-31">
+                <button onclick="applyFilters()" style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">Apply Filters</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- KPI Cards Section -->
+        <section id="kpiSection">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Reviews Analyzed</div>
+                    <div class="kpi-value" id="totalReviews">5,000</div>
+                    <div class="kpi-change">↑ Real-time update</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Avg Sentiment Score</div>
+                    <div class="kpi-value sentiment-neutral" id="avgSentiment">0.64</div>
+                    <div class="kpi-change">Scale: -1 (negative) to +1 (positive)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Sentiment Distribution</div>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.75rem;">
+                        <div>
+                            <div class="sentiment-positive" id="posCount">0</div>
+                            <div class="kpi-label">Positive</div>
+                        </div>
+                        <div>
+                            <div class="sentiment-neutral" id="neuCount">0</div>
+                            <div class="kpi-label">Neutral</div>
+                        </div>
+                        <div>
+                            <div class="sentiment-negative" id="negCount">0</div>
+                            <div class="kpi-label">Negative</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Trending Topics</div>
+                    <div class="kpi-value" id="topicCount">24</div>
+                    <div class="kpi-change">↑ 3 new this month</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Review Velocity</div>
+                    <div class="kpi-value" id="reviewVelocity">13.7</div>
+                    <div class="kpi-change">Reviews per day (avg)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Avg Star Rating</div>
+                    <div class="kpi-value" id="avgRating">3.8</div>
+                    <div class="kpi-change">Across all categories</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sentiment Timeline -->
+        <section>
+            <div class="section-title">Sentiment Timeline & Volume Trends</div>
+            <div class="chart-container">
+                <div style="margin-bottom: 1rem;">
+                    <label style="color: #94a3b8; margin-right: 1rem;">
+                        <input type="radio" name="timelineView" value="absolute" checked onchange="updateTimelineChart()"> Absolute Count
+                    </label>
+                    <label style="color: #94a3b8;">
+                        <input type="radio" name="timelineView" value="percentage" onchange="updateTimelineChart()"> Percentage Stacked
+                    </label>
+                </div>
+                <div class="chart-inner" id="sentimentTimeline"></div>
+            </div>
+        </section>
+
+        <!-- Sentiment Distribution -->
+        <section>
+            <div class="section-title">Sentiment Score Distribution by Category</div>
+            <div class="chart-container">
+                <div class="chart-inner" id="sentimentDistribution"></div>
+            </div>
+        </section>
+
+        <!-- Sentiment Heatmap - KEY FEATURE -->
+        <section>
+            <div class="section-title">Sentiment Heatmap: Category × Time</div>
+            <div class="chart-container">
+                <div style="color: #cbd5e1; font-size: 0.875rem; margin-bottom: 1rem;">
+                    Average sentiment score by product category over time. Green = positive, Red = negative.
+                </div>
+                <div class="chart-inner" id="sentimentHeatmap"></div>
+            </div>
+        </section>
+
+        <!-- Topic Analysis -->
+        <section>
+            <div class="section-title">Topic Analysis & Extraction</div>
+
+            <div class="chart-container">
+                <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Top 15 Topics by Frequency</h3>
+                <div class="chart-inner" id="topTopics"></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Topic × Sentiment Analysis</h3>
+                    <div class="chart-inner" id="topicSentimentBubble"></div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Topic Trends Over Time</h3>
+                    <div class="chart-inner" id="topicTrends"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Word Clouds -->
+        <section>
+            <div class="section-title">Word Cloud Analysis</div>
+            <div class="grid-2">
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Positive Reviews Word Cloud</h3>
+                    <div class="chart-inner" id="positiveWordCloud"></div>
+                </div>
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Negative Reviews Word Cloud</h3>
+                    <div class="chart-inner" id="negativeWordCloud"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Aspect-Based Sentiment -->
+        <section>
+            <div class="section-title">Aspect-Based Sentiment Analysis</div>
+            <div class="chart-container">
+                <div style="color: #cbd5e1; font-size: 0.875rem; margin-bottom: 1rem;">
+                    Sentiment breakdown by product aspects (Quality, Price, Delivery, Support, Design) across categories.
+                </div>
+                <div class="chart-inner" id="aspectHeatmap"></div>
+            </div>
+        </section>
+
+        <!-- Comparative Analysis -->
+        <section>
+            <div class="section-title">Comparative Analysis</div>
+            <div class="grid-2">
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Product Category Sentiment Comparison</h3>
+                    <div class="chart-inner" id="categoryComparison"></div>
+                </div>
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Star Rating vs NLP Sentiment Correlation</h3>
+                    <div class="chart-inner" id="ratingVsSentiment"></div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Sentiment by Customer Segment</h3>
+                <div class="chart-inner" id="customerSegment"></div>
+            </div>
+        </section>
+
+        <!-- Alert System -->
+        <section>
+            <div class="section-title">Alerts & Anomalies</div>
+            <div id="alertsContainer"></div>
+        </section>
+
+        <!-- Review Explorer -->
+        <section>
+            <div class="section-title">Review Explorer</div>
+            <div class="chart-container">
+                <div style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem;">
+                    Sample of reviews from selected filters. Click row to expand full text.
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="review-table" id="reviewTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Product</th>
+                                <th>Rating</th>
+                                <th>Sentiment</th>
+                                <th>Score</th>
+                                <th>Topics</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>Built by <a href="https://github.com/mayankjoshiii">Mayank Joshi</a> | MSc Business Analytics | <a href="https://github.com/mayankjoshiii/nlp-sentiment-dashboard">View on GitHub</a></p>
+    </footer>
+
+    <script>
+        // ==========================================
+        // NLP & DATA GENERATION ENGINE
+        // ==========================================
+
+        // Seeded Random Number Generator
+        class SeededRandom {
+            constructor(seed = 42) {
+                this.seed = seed;
+            }
+            next() {
+                this.seed = (this.seed * 9301 + 49297) % 233280;
+                return this.seed / 233280;
+            }
+        }
+
+        // AFINN-style Sentiment Lexicon (200+ words)
+        const sentimentLexicon = {
+            'excellent': 4, 'amazing': 4, 'fantastic': 4, 'wonderful': 3.5, 'great': 3, 'good': 2,
+            'love': 3.5, 'loved': 3.5, 'awesome': 4, 'perfect': 4, 'superb': 4, 'outstanding': 4,
+            'beautiful': 3, 'elegant': 3, 'impressive': 3.5, 'brilliant': 4, 'delighted': 4,
+            'satisfied': 2.5, 'happy': 3, 'pleased': 2.5, 'recommend': 2.5, 'recommend': 2.5,
+            'quality': 2, 'reliable': 2.5, 'durable': 2.5, 'comfortable': 2.5, 'smooth': 2,
+            'fast': 1.5, 'quick': 1.5, 'efficient': 2, 'accurate': 2, 'precise': 2,
+            'useful': 2, 'helpful': 2.5, 'convenient': 2, 'practical': 1.5, 'effective': 2,
+            'bad': -3, 'terrible': -3.5, 'awful': -3.5, 'horrible': -4, 'worst': -4, 'disgusting': -4,
+            'hate': -3, 'hated': -3, 'poor': -2.5, 'disappointing': -3, 'disappointed': -3,
+            'useless': -3.5, 'waste': -3, 'broken': -3.5, 'defective': -3.5, 'damaged': -3,
+            'cheap': -1.5, 'low': -1, 'inferior': -3, 'mediocre': -2, 'substandard': -3,
+            'slow': -2, 'sluggish': -2, 'laggy': -2.5, 'unreliable': -3, 'fragile': -3,
+            'uncomfortable': -2.5, 'rough': -1.5, 'flimsy': -3, 'cheap': -1.5,
+            'problem': -2, 'issue': -1.5, 'bug': -2, 'glitch': -2, 'error': -1.5,
+            'refund': -2.5, 'return': -1.5, 'complaint': -2.5, 'complain': -2.5,
+            'fine': 1, 'okay': 0.5, 'ok': 0.5, 'decent': 1.5, 'acceptable': 1,
+            'better': 1.5, 'worse': -1.5, 'improvement': 2, 'value': 1.5
+        };
+
+        // Review text templates
+        const reviewTemplates = {
+            positive: [
+                'Absolutely {adj} product! {description} Highly recommend it.',
+                'Love this! {description} Really exceeded my expectations.',
+                'This is {adj}! {description} Best purchase ever.',
+                '{description} {adj} quality and fast shipping. So satisfied!',
+                'Fantastic experience. {description} Will definitely buy again.',
+                'Excellent value for money. {description} {adj}!',
+                'Really impressed with this. {description} Perfect for my needs.',
+                '{description} Amazing product. {adj} performance. Highly satisfied!'
+            ],
+            neutral: [
+                'Product arrived as described. {description} Does what it claims.',
+                'It\'s okay. {description} Nothing special but acceptable.',
+                'Decent product. {description} Got what I paid for.',
+                'Meets expectations. {description} Standard quality.',
+                'Product works fine. {description} Can\'t complain.',
+                'It\'s alright. {description} Nothing to worry about.',
+                'Good enough. {description} Works as intended.',
+                'Standard quality. {description} Fair price for the product.'
+            ],
+            negative: [
+                'Disappointed with this {adj} product. {description} Not worth it.',
+                'Poor quality. {description} Breaks easily. {issue}',
+                'Waste of money. {description} Terrible experience. {issue}',
+                'Really bad. {description} {adj} quality. Very disappointed.',
+                'Horrible product. {description} {issue} Save your money.',
+                'Not recommended. {description} {adj} quality. Many problems.',
+                'Terrible {adj} and customer service. {description}',
+                '{description} {issue} Avoid this product. Bad purchase.'
+            ]
+        };
+
+        const descriptions = [
+            'It arrived quickly',
+            'Great customer service',
+            'Easy to use',
+            'Looks premium',
+            'Perfect fit',
+            'Better than expected',
+            'Exactly as pictured',
+            'Shipping was fast',
+            'Packaging is sturdy',
+            'Clear instructions'
+        ];
+
+        const issues = [
+            'Doesn\'t last long',
+            'Broke after a week',
+            'Poor construction',
+            'Missing parts',
+            'Not as described',
+            'Very cheap feeling',
+            'Stopped working',
+            'Bad packaging'
+        ];
+
+        const adjectives = {
+            positive: ['incredible', 'outstanding', 'superb', 'brilliant', 'wonderful'],
+            negative: ['pathetic', 'shoddy', 'flimsy', 'mediocre', 'rubbish']
+        };
+
+        // Topic keywords (for extraction)
+        const topicKeywords = {
+            'Quality & Durability': ['quality', 'durable', 'durable', 'strong', 'solid', 'built', 'construction', 'material'],
+            'Price & Value': ['price', 'value', 'expensive', 'cheap', 'cost', 'money', 'worth', 'overpriced', 'afford'],
+            'Shipping & Delivery': ['shipping', 'delivery', 'fast', 'quick', 'late', 'slow', 'packaging', 'arrived'],
+            'Customer Service': ['support', 'service', 'customer', 'help', 'response', 'helpful', 'friendly', 'communication'],
+            'Design & Appearance': ['design', 'look', 'appearance', 'style', 'color', 'aesthetic', 'beautiful', 'modern'],
+            'Functionality': ['works', 'function', 'performance', 'feature', 'operates', 'reliable', 'efficient', 'lag'],
+            'Comfort & Fit': ['comfortable', 'fit', 'size', 'length', 'width', 'snug', 'loose', 'cozy'],
+            'Packaging': ['packaging', 'box', 'wrapped', 'protected', 'damaged', 'presentation', 'unbox'],
+            'Comparison': ['compared', 'better', 'worse', 'similar', 'versus', 'alternative'],
+            'Return & Warranty': ['return', 'refund', 'warranty', 'guarantee', 'policy', 'exchange', 'hassle-free']
+        };
+
+        // Product names by category
+        const productNames = {
+            'Electronics': ['ProBook X1', 'SmartWatch Pro', 'Wireless Earbuds', 'Gaming Laptop', 'USB-C Hub', '4K Monitor'],
+            'Clothing': ['Cotton T-Shirt', 'Denim Jeans', 'Running Shoes', 'Fleece Jacket', 'Summer Dress', 'Wool Sweater'],
+            'Home & Kitchen': ['Non-Stick Pan', 'Coffee Maker', 'Knife Set', 'Storage Bins', 'LED Lamp', 'Towel Set'],
+            'Beauty': ['Face Serum', 'Moisturizer', 'Lipstick', 'Foundation', 'Eye Cream', 'Hair Mask'],
+            'Sports': ['Yoga Mat', 'Dumbbells', 'Running Belt', 'Water Bottle', 'Resistance Bands', 'Gym Bag'],
+            'Books': ['Self-Help Guide', 'Fiction Novel', 'Business Book', 'Cookery Guide', 'Art Book', 'Tech Manual']
+        };
+
+        const aspectKeywords = {
+            'Quality': ['quality', 'durable', 'sturdy', 'strong', 'robust', 'solid', 'built'],
+            'Price': ['price', 'cost', 'expensive', 'cheap', 'value', 'worth', 'overpriced'],
+            'Delivery': ['delivery', 'shipping', 'fast', 'quick', 'slow', 'late', 'arrived'],
+            'Support': ['support', 'service', 'customer', 'help', 'responsive', 'helpful'],
+            'Design': ['design', 'look', 'color', 'style', 'aesthetic', 'modern', 'beautiful']
+        };
+
+        // TF-IDF Implementation
+        class TFIDFExtractor {
+            constructor(documents) {
+                this.documents = documents;
+                this.buildIndex();
+            }
+
+            buildIndex() {
+                this.tf = [];
+                this.idf = {};
+                this.vocabulary = new Set();
+
+                // Build vocabulary and TF
+                this.documents.forEach((doc, docIdx) => {
+                    const words = this.tokenize(doc);
+                    const docTF = {};
+
+                    words.forEach(word => {
+                        this.vocabulary.add(word);
+                        docTF[word] = (docTF[word] || 0) + 1;
+                    });
+
+                    // Normalize TF
+                    const total = words.length;
+                    Object.keys(docTF).forEach(word => {
+                        docTF[word] /= total;
+                    });
+
+                    this.tf[docIdx] = docTF;
+                });
+
+                // Calculate IDF
+                this.vocabulary.forEach(word => {
+                    let count = 0;
+                    this.tf.forEach(docTF => {
+                        if (docTF[word]) count++;
+                    });
+                    this.idf[word] = Math.log(this.documents.length / (1 + count));
+                });
+            }
+
+            tokenize(text) {
+                return text.toLowerCase()
+                    .split(/\s+/)
+                    .filter(w => w.length > 3 && !['that', 'this', 'with', 'from', 'have'].includes(w));
+            }
+
+            extractKeywords(text, topN = 5) {
+                const words = this.tokenize(text);
+                const scores = {};
+
+                words.forEach(word => {
+                    if (this.vocabulary.has(word)) {
+                        scores[word] = (this.idf[word] || 0);
+                    }
+                });
+
+                return Object.entries(scores)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, topN)
+                    .map(([word]) => word);
+            }
+        }
+
+        // Sentiment Analysis Engine
+        class SentimentAnalyzer {
+            scoreSentiment(text) {
+                const words = text.toLowerCase().split(/\s+/);
+                let score = 0;
+                let count = 0;
+
+                words.forEach(word => {
+                    word = word.replace(/[^\w]/g, '');
+                    if (sentimentLexicon[word]) {
+                        score += sentimentLexicon[word];
+                        count++;
+                    }
+                });
+
+                if (count === 0) return 0;
+                const normalized = Math.max(-1, Math.min(1, score / (count * 2)));
+                return parseFloat(normalized.toFixed(3));
+            }
+
+            classifySentiment(score) {
+                if (score > 0.1) return 'positive';
+                if (score < -0.1) return 'negative';
+                return 'neutral';
+            }
+
+            detectAspectSentiments(text) {
+                const aspects = {};
+                Object.entries(aspectKeywords).forEach(([aspect, keywords]) => {
+                    let aspectScore = 0;
+                    let foundCount = 0;
+
+                    keywords.forEach(keyword => {
+                        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                        const matches = text.match(regex);
+                        if (matches) {
+                            foundCount += matches.length;
+                            const contextWords = text.toLowerCase().split(/\s+/);
+                            const idx = contextWords.findIndex(w => w.includes(keyword));
+                            if (idx !== -1) {
+                                const context = contextWords.slice(Math.max(0, idx - 2), idx + 3).join(' ');
+                                aspectScore += this.scoreSentiment(context);
+                            }
+                        }
+                    });
+
+                    if (foundCount > 0) {
+                        aspects[aspect] = parseFloat((aspectScore / foundCount).toFixed(3));
+                    }
+                });
+
+                return aspects;
+            }
+        }
+
+        // Data Generator
+        function generateReviews(count = 5000) {
+            const rng = new SeededRandom(42);
+            const reviews = [];
+            const categories = Object.keys(productNames);
+            const startDate = new Date(2024, 0, 1);
+
+            for (let i = 0; i < count; i++) {
+                const category = categories[Math.floor(rng.next() * categories.length)];
+                const daysOffset = Math.floor(rng.next() * 365);
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + daysOffset);
+
+                // Sentiment distribution: 50% positive, 30% neutral, 20% negative
+                const sentimentRng = rng.next();
+                let template, adj, desc, issu;
+
+                if (sentimentRng < 0.5) {
+                    template = reviewTemplates.positive[Math.floor(rng.next() * reviewTemplates.positive.length)];
+                    adj = adjectives.positive[Math.floor(rng.next() * adjectives.positive.length)];
+                } else if (sentimentRng < 0.8) {
+                    template = reviewTemplates.neutral[Math.floor(rng.next() * reviewTemplates.neutral.length)];
+                    adj = '';
+                } else {
+                    template = reviewTemplates.negative[Math.floor(rng.next() * reviewTemplates.negative.length)];
+                    adj = adjectives.negative[Math.floor(rng.next() * adjectives.negative.length)];
+                    issu = issues[Math.floor(rng.next() * issues.length)];
+                }
+
+                desc = descriptions[Math.floor(rng.next() * descriptions.length)];
+                const productName = productNames[category][Math.floor(rng.next() * productNames[category].length)];
+                const rating = Math.max(1, Math.min(5, Math.round(rng.next() * 5)));
+
+                const reviewText = template
+                    .replace('{adj}', adj)
+                    .replace('{description}', desc)
+                    .replace('{issue}', issu || '');
+
+                reviews.push({
+                    id: i + 1,
+                    date: date,
+                    category: category,
+                    product: productName,
+                    rating: rating,
+                    text: reviewText,
+                    isReturning: rng.next() > 0.3 // 70% returning customers
+                });
+            }
+
+            return reviews;
+        }
+
+        // ==========================================
+        // APPLICATION STATE & FILTERING
+        // ==========================================
+
+        let allReviews = [];
+        let filteredReviews = [];
+        let analyzer = new SentimentAnalyzer();
+        let tfidfExtractor = null;
+
+        function initializeData() {
+            allReviews = generateReviews(5000);
+
+            // Analyze sentiment and extract topics
+            allReviews.forEach(review => {
+                review.sentiment = analyzer.scoreSentiment(review.text);
+                review.sentimentClass = analyzer.classifySentiment(review.sentiment);
+                review.aspects = analyzer.detectAspectSentiments(review.text);
+                review.customerSegment = review.isReturning ? 'Returning' : 'New';
+            });
+
+            // Initialize TF-IDF
+            const texts = allReviews.map(r => r.text);
+            tfidfExtractor = new TFIDFExtractor(texts);
+
+            // Extract topics and keywords
+            allReviews.forEach(review => {
+                const topicMatches = {};
+                Object.entries(topicKeywords).forEach(([topic, keywords]) => {
+                    const matches = keywords.filter(kw =>
+                        review.text.toLowerCase().includes(kw)
+                    );
+                    if (matches.length > 0) {
+                        topicMatches[topic] = matches.length;
+                    }
+                });
+                review.topics = Object.keys(topicMatches);
+                review.keywords = tfidfExtractor.extractKeywords(review.text, 5);
+            });
+
+            filteredReviews = [...allReviews];
+            updateDashboard();
+        }
+
+        function applyFilters() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const dateFrom = new Date(document.getElementById('dateFrom').value);
+            const dateTo = new Date(document.getElementById('dateTo').value);
+
+            filteredReviews = allReviews.filter(review => {
+                const matchCategory = !categoryFilter || review.category === categoryFilter;
+                const matchDate = review.date >= dateFrom && review.date <= dateTo;
+                return matchCategory && matchDate;
+            });
+
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            updateKPIs();
+            updateTimelineChart();
+            updateSentimentDistribution();
+            updateSentimentHeatmap();
+            updateTopics();
+            updateWordClouds();
+            updateAspectSentiment();
+            updateComparativeAnalysis();
+            updateAlerts();
+            updateReviewTable();
+        }
+
+        // ==========================================
+        // DASHBOARD UPDATES
+        // ==========================================
+
+        function updateKPIs() {
+            const total = filteredReviews.length;
+            const avgSentiment = (filteredReviews.reduce((sum, r) => sum + r.sentiment, 0) / total).toFixed(3);
+            const positive = filteredReviews.filter(r => r.sentimentClass === 'positive').length;
+            const neutral = filteredReviews.filter(r => r.sentimentClass === 'neutral').length;
+            const negative = filteredReviews.filter(r => r.sentimentClass === 'negative').length;
+            const avgRating = (filteredReviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1);
+
+            // Unique topics
+            const topicsSet = new Set();
+            filteredReviews.forEach(r => r.topics.forEach(t => topicsSet.add(t)));
+
+            // Review velocity (reviews per day in selected range)
+            const dateFrom = new Date(document.getElementById('dateFrom').value);
+            const dateTo = new Date(document.getElementById('dateTo').value);
+            const daysRange = (dateTo - dateFrom) / (1000 * 60 * 60 * 24) + 1;
+            const velocity = (total / daysRange).toFixed(1);
+
+            document.getElementById('totalReviews').textContent = total.toLocaleString();
+            document.getElementById('avgSentiment').textContent = avgSentiment;
+            document.getElementById('posCount').textContent = positive.toLocaleString();
+            document.getElementById('neuCount').textContent = neutral.toLocaleString();
+            document.getElementById('negCount').textContent = negative.toLocaleString();
+            document.getElementById('topicCount').textContent = topicsSet.size;
+            document.getElementById('reviewVelocity').textContent = velocity;
+            document.getElementById('avgRating').textContent = avgRating;
+        }
+
+        function updateTimelineChart() {
+            const monthlyData = {};
+            filteredReviews.forEach(review => {
+                const yearMonth = review.date.toISOString().slice(0, 7);
+                if (!monthlyData[yearMonth]) {
+                    monthlyData[yearMonth] = { positive: 0, neutral: 0, negative: 0 };
+                }
+                monthlyData[yearMonth][review.sentimentClass]++;
+            });
+
+            const months = Object.keys(monthlyData).sort();
+            const positive = months.map(m => monthlyData[m].positive);
+            const neutral = months.map(m => monthlyData[m].neutral);
+            const negative = months.map(m => monthlyData[m].negative);
+
+            const viewMode = document.querySelector('input[name="timelineView"]:checked').value;
+
+            if (viewMode === 'percentage') {
+                // Convert to percentages
+                for (let i = 0; i < months.length; i++) {
+                    const total = positive[i] + neutral[i] + negative[i];
+                    positive[i] = (positive[i] / total * 100);
+                    neutral[i] = (neutral[i] / total * 100);
+                    negative[i] = (negative[i] / total * 100);
+                }
+            }
+
+            const trace1 = {
+                x: months,
+                y: positive,
+                name: 'Positive',
+                mode: 'lines',
+                line: { color: '#10b981', width: 2 },
+                fill: viewMode === 'percentage' ? 'tonexty' : undefined,
+                stackgroup: viewMode === 'percentage' ? 'one' : undefined
+            };
+
+            const trace2 = {
+                x: months,
+                y: neutral,
+                name: 'Neutral',
+                mode: 'lines',
+                line: { color: '#f59e0b', width: 2 },
+                fill: viewMode === 'percentage' ? 'tonexty' : undefined,
+                stackgroup: viewMode === 'percentage' ? 'one' : undefined
+            };
+
+            const trace3 = {
+                x: months,
+                y: negative,
+                name: 'Negative',
+                mode: 'lines',
+                line: { color: '#ef4444', width: 2 },
+                fill: viewMode === 'percentage' ? 'tonexty' : undefined,
+                stackgroup: viewMode === 'percentage' ? 'one' : undefined
+            };
+
+            const layout = {
+                title: viewMode === 'percentage' ? 'Sentiment Distribution (%)' : 'Review Volume Trend',
+                hovermode: 'x unified',
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                xaxis: { gridcolor: '#334155' },
+                yaxis: { gridcolor: '#334155' },
+                margin: { l: 60, r: 30, t: 60, b: 60 }
+            };
+
+            Plotly.newPlot('sentimentTimeline', [trace1, trace2, trace3], layout, { responsive: true });
+        }
+
+        function updateSentimentDistribution() {
+            const categories = [...new Set(filteredReviews.map(r => r.category))].sort();
+            const traces = categories.map(cat => {
+                const scores = filteredReviews
+                    .filter(r => r.category === cat)
+                    .map(r => r.sentiment);
+
+                return {
+                    y: scores,
+                    name: cat,
+                    box: { visible: true },
+                    type: 'box',
+                    marker: { color: '#8b5cf6' }
+                };
+            });
+
+            const layout = {
+                title: 'Sentiment Score Distribution by Category (Box Plot)',
+                showlegend: false,
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                xaxis: { gridcolor: '#334155' },
+                yaxis: { gridcolor: '#334155' },
+                margin: { l: 60, r: 30, t: 60, b: 100 }
+            };
+
+            Plotly.newPlot('sentimentDistribution', traces, layout, { responsive: true });
+        }
+
+        function updateSentimentHeatmap() {
+            const categories = [...new Set(filteredReviews.map(r => r.category))].sort();
+            const months = [];
+            const monthSet = new Set();
+
+            filteredReviews.forEach(r => {
+                monthSet.add(r.date.toISOString().slice(0, 7));
+            });
+
+            const sortedMonths = Array.from(monthSet).sort();
+
+            const zData = categories.map(cat => {
+                return sortedMonths.map(month => {
+                    const matching = filteredReviews.filter(r =>
+                        r.category === cat &&
+                        r.date.toISOString().slice(0, 7) === month
+                    );
+                    return matching.length > 0
+                        ? (matching.reduce((sum, r) => sum + r.sentiment, 0) / matching.length)
+                        : 0;
+                });
+            });
+
+            const trace = {
+                z: zData,
+                x: sortedMonths,
+                y: categories,
+                type: 'heatmap',
+                colorscale: [
+                    [0, '#ef4444'],
+                    [0.5, '#0f172a'],
+                    [1, '#10b981']
+                ],
+                zmid: 0,
+                colorbar: {
+                    title: 'Sentiment<br>Score',
+                    thickness: 15,
+                    len: 0.7,
+                    tickfont: { color: '#e2e8f0' }
+                }
+            };
+
+            const layout = {
+                title: 'Product Category × Time Sentiment Heatmap',
+                xaxis: { title: 'Month', gridcolor: '#334155' },
+                yaxis: { title: 'Category' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                margin: { l: 150, r: 100, t: 60, b: 60 }
+            };
+
+            Plotly.newPlot('sentimentHeatmap', [trace], layout, { responsive: true });
+        }
+
+        function updateTopics() {
+            // Top 15 topics
+            const topicFreq = {};
+            filteredReviews.forEach(review => {
+                review.topics.forEach(topic => {
+                    topicFreq[topic] = (topicFreq[topic] || 0) + 1;
+                });
+            });
+
+            const sorted = Object.entries(topicFreq)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15);
+
+            const trace = {
+                y: sorted.map(([topic]) => topic),
+                x: sorted.map(([, freq]) => freq),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#8b5cf6' }
+            };
+
+            const layout = {
+                title: 'Top 15 Topics by Frequency',
+                xaxis: { title: 'Frequency', gridcolor: '#334155' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                margin: { l: 200, r: 30, t: 60, b: 60 }
+            };
+
+            Plotly.newPlot('topTopics', [trace], layout, { responsive: true });
+
+            // Topic × Sentiment Bubble
+            const topicSentimentData = {};
+            filteredReviews.forEach(review => {
+                review.topics.forEach(topic => {
+                    if (!topicSentimentData[topic]) {
+                        topicSentimentData[topic] = { sentiments: [], count: 0 };
+                    }
+                    topicSentimentData[topic].sentiments.push(review.sentiment);
+                    topicSentimentData[topic].count++;
+                });
+            });
+
+            const bubbleData = Object.entries(topicSentimentData)
+                .map(([topic, data]) => ({
+                    topic,
+                    avgSentiment: data.sentiments.reduce((a, b) => a + b, 0) / data.sentiments.length,
+                    count: data.count
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 12);
+
+            const bubbleTrace = {
+                x: bubbleData.map(d => d.avgSentiment),
+                y: bubbleData.map(d => d.topic),
+                mode: 'markers',
+                marker: {
+                    size: bubbleData.map(d => Math.sqrt(d.count) * 2),
+                    color: bubbleData.map(d => d.avgSentiment),
+                    colorscale: [[0, '#ef4444'], [0.5, '#f59e0b'], [1, '#10b981']],
+                    showscale: true,
+                    colorbar: { title: 'Avg Sentiment', tickfont: { color: '#e2e8f0' } }
+                }
+            };
+
+            const bubbleLayout = {
+                title: 'Topic × Sentiment Analysis',
+                xaxis: { title: 'Average Sentiment Score', gridcolor: '#334155' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                margin: { l: 200, r: 100, t: 60, b: 60 }
+            };
+
+            Plotly.newPlot('topicSentimentBubble', [bubbleTrace], bubbleLayout, { responsive: true });
+
+            // Topic trends
+            const topTopics = sorted.slice(0, 5).map(([topic]) => topic);
+            const monthlyTopics = {};
+
+            filteredReviews.forEach(review => {
+                const month = review.date.toISOString().slice(0, 7);
+                if (!monthlyTopics[month]) monthlyTopics[month] = {};
+
+                review.topics.forEach(topic => {
+                    if (topTopics.includes(topic)) {
+                        monthlyTopics[month][topic] = (monthlyTopics[month][topic] || 0) + 1;
+                    }
+                });
+            });
+
+            const months = Object.keys(monthlyTopics).sort();
+            const trendTraces = topTopics.map(topic => ({
+                x: months,
+                y: months.map(m => monthlyTopics[m][topic] || 0),
+                name: topic,
+                mode: 'lines',
+                line: { width: 2 }
+            }));
+
+            const trendLayout = {
+                title: 'Top 5 Topic Trends Over Time',
+                xaxis: { title: 'Month', gridcolor: '#334155' },
+                yaxis: { title: 'Mentions', gridcolor: '#334155' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                hovermode: 'x unified',
+                margin: { l: 60, r: 30, t: 60, b: 60 }
+            };
+
+            Plotly.newPlot('topicTrends', trendTraces, trendLayout, { responsive: true });
+        }
+
+        function updateWordClouds() {
+            const positiveReviews = filteredReviews.filter(r => r.sentimentClass === 'positive');
+            const negativeReviews = filteredReviews.filter(r => r.sentimentClass === 'negative');
+
+            const wordFreq = (reviews) => {
+                const freq = {};
+                reviews.forEach(r => {
+                    r.keywords.forEach(kw => {
+                        freq[kw] = (freq[kw] || 0) + 1;
+                    });
+                });
+                return freq;
+            };
+
+            const posFreq = wordFreq(positiveReviews);
+            const negFreq = wordFreq(negativeReviews);
+
+            const createWordCloudTrace = (freq) => {
+                const words = Object.entries(freq)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 25);
+
+                const maxFreq = Math.max(...words.map(w => w[1]));
+                const positions = [];
+                const radius = 0.8;
+
+                words.forEach((word, idx) => {
+                    const angle = (idx / words.length) * Math.PI * 2;
+                    positions.push({
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius
+                    });
+                });
+
+                return {
+                    x: positions.map(p => p.x),
+                    y: positions.map(p => p.y),
+                    mode: 'text',
+                    text: words.map(([w]) => w),
+                    textfont: {
+                        size: words.map(([, freq]) => 10 + (freq / maxFreq) * 30),
+                        color: words.map(([, freq]) => freq / maxFreq > 0.6 ? '#10b981' : '#8b5cf6')
+                    },
+                    hoverinfo: 'text',
+                    hovertext: words.map(([w, freq]) => `${w}: ${freq} mentions`)
+                };
+            };
+
+            const posLayout = {
+                title: 'Words from Positive Reviews',
+                showlegend: false,
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                xaxis: { showgrid: false, zeroline: false, showticklabels: false },
+                yaxis: { showgrid: false, zeroline: false, showticklabels: false },
+                margin: { l: 30, r: 30, t: 60, b: 30 }
+            };
+
+            const negLayout = {
+                title: 'Words from Negative Reviews',
+                showlegend: false,
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                xaxis: { showgrid: false, zeroline: false, showticklabels: false },
+                yaxis: { showgrid: false, zeroline: false, showticklabels: false },
+                margin: { l: 30, r: 30, t: 60, b: 30 }
+            };
+
+            Plotly.newPlot('positiveWordCloud', [createWordCloudTrace(posFreq)], posLayout, { responsive: true });
+            Plotly.newPlot('negativeWordCloud', [createWordCloudTrace(negFreq)], negLayout, { responsive: true });
+        }
+
+        function updateAspectSentiment() {
+            const aspects = ['Quality', 'Price', 'Delivery', 'Support', 'Design'];
+            const categories = [...new Set(filteredReviews.map(r => r.category))].sort();
+
+            const zData = aspects.map(aspect => {
+                return categories.map(cat => {
+                    const matching = filteredReviews.filter(r => r.category === cat);
+                    const scores = matching
+                        .filter(r => r.aspects[aspect] !== undefined)
+                        .map(r => r.aspects[aspect]);
+
+                    return scores.length > 0
+                        ? scores.reduce((a, b) => a + b, 0) / scores.length
+                        : 0;
+                });
+            });
+
+            const trace = {
+                z: zData,
+                x: categories,
+                y: aspects,
+                type: 'heatmap',
+                colorscale: [
+                    [0, '#ef4444'],
+                    [0.5, '#0f172a'],
+                    [1, '#10b981']
+                ],
+                zmid: 0,
+                colorbar: {
+                    title: 'Sentiment<br>Score',
+                    thickness: 15,
+                    len: 0.7,
+                    tickfont: { color: '#e2e8f0' }
+                }
+            };
+
+            const layout = {
+                title: 'Aspect-Based Sentiment: Product Aspects × Categories',
+                xaxis: { title: 'Category', gridcolor: '#334155' },
+                yaxis: { title: 'Aspect' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                margin: { l: 100, r: 100, t: 60, b: 100 }
+            };
+
+            Plotly.newPlot('aspectHeatmap', [trace], layout, { responsive: true });
+        }
+
+        function updateComparativeAnalysis() {
+            const categories = [...new Set(filteredReviews.map(r => r.category))].sort();
+
+            // Category comparison
+            const categoryStats = categories.map(cat => {
+                const matching = filteredReviews.filter(r => r.category === cat);
+                const avgSentiment = matching.reduce((sum, r) => sum + r.sentiment, 0) / matching.length;
+                const avgRating = matching.reduce((sum, r) => sum + r.rating, 0) / matching.length;
+
+                return { category: cat, avgSentiment, avgRating };
+            });
+
+            const compTrace = {
+                x: categoryStats.map(s => s.category),
+                y: categoryStats.map(s => s.avgSentiment),
+                type: 'bar',
+                marker: {
+                    color: categoryStats.map(s => s.avgSentiment),
+                    colorscale: [[0, '#ef4444'], [0.5, '#f59e0b'], [1, '#10b981']]
+                }
+            };
+
+            const compLayout = {
+                title: 'Average Sentiment by Product Category',
+                xaxis: { title: 'Category', gridcolor: '#334155' },
+                yaxis: { title: 'Avg Sentiment Score', gridcolor: '#334155' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                showlegend: false,
+                margin: { l: 60, r: 30, t: 60, b: 100 }
+            };
+
+            Plotly.newPlot('categoryComparison', [compTrace], compLayout, { responsive: true });
+
+            // Rating vs Sentiment correlation
+            const scatterTrace = {
+                x: filteredReviews.map(r => r.rating),
+                y: filteredReviews.map(r => r.sentiment),
+                mode: 'markers',
+                marker: {
+                    size: 5,
+                    color: filteredReviews.map(r => r.sentiment),
+                    colorscale: [[0, '#ef4444'], [0.5, '#f59e0b'], [1, '#10b981']],
+                    opacity: 0.6
+                },
+                type: 'scatter'
+            };
+
+            const scatterLayout = {
+                title: 'Star Rating vs NLP Sentiment Correlation',
+                xaxis: { title: 'Star Rating (1-5)', gridcolor: '#334155' },
+                yaxis: { title: 'NLP Sentiment Score (-1 to +1)', gridcolor: '#334155' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                showlegend: false,
+                margin: { l: 80, r: 30, t: 60, b: 80 }
+            };
+
+            Plotly.newPlot('ratingVsSentiment', [scatterTrace], scatterLayout, { responsive: true });
+
+            // Customer segment
+            const segments = ['New', 'Returning'];
+            const segmentStats = segments.map(seg => {
+                const matching = filteredReviews.filter(r => r.customerSegment === seg);
+                const avgSentiment = matching.length > 0
+                    ? matching.reduce((sum, r) => sum + r.sentiment, 0) / matching.length
+                    : 0;
+                return { segment: seg, count: matching.length, avgSentiment };
+            });
+
+            const segmentTrace = {
+                x: segmentStats.map(s => s.segment),
+                y: segmentStats.map(s => s.avgSentiment),
+                type: 'bar',
+                marker: { color: '#8b5cf6' }
+            };
+
+            const segmentLayout = {
+                title: 'Sentiment by Customer Segment',
+                xaxis: { title: 'Customer Type', gridcolor: '#334155' },
+                yaxis: { title: 'Avg Sentiment Score', gridcolor: '#334155' },
+                plot_bgcolor: 'rgba(15, 23, 42, 0.5)',
+                paper_bgcolor: 'transparent',
+                font: { color: '#e2e8f0' },
+                showlegend: false,
+                margin: { l: 60, r: 30, t: 60, b: 80 }
+            };
+
+            Plotly.newPlot('customerSegment', [segmentTrace], segmentLayout, { responsive: true });
+        }
+
+        function updateAlerts() {
+            const alerts = [];
+
+            // Sentiment dropping
+            const categories = [...new Set(filteredReviews.map(r => r.category))];
+            const monthlyStats = {};
+
+            filteredReviews.forEach(review => {
+                const month = review.date.toISOString().slice(0, 7);
+                const cat = review.category;
+                const key = `${cat}-${month}`;
+
+                if (!monthlyStats[key]) {
+                    monthlyStats[key] = { sentiments: [], category: cat, month };
+                }
+                monthlyStats[key].sentiments.push(review.sentiment);
+            });
+
+            Object.values(monthlyStats).forEach(stat => {
+                stat.avgSentiment = stat.sentiments.reduce((a, b) => a + b, 0) / stat.sentiments.length;
+            });
+
+            const sortedByMonth = Object.values(monthlyStats).sort((a, b) => b.month.localeCompare(a.month));
+            const latestMonth = sortedByMonth[0]?.month;
+
+            if (latestMonth) {
+                categories.forEach(cat => {
+                    const latest = sortedByMonth.find(s => s.category === cat && s.month === latestMonth);
+                    const previous = sortedByMonth.find(s => s.category === cat && s.month < latestMonth);
+
+                    if (latest && previous && latest.avgSentiment < previous.avgSentiment - 0.1) {
+                        alerts.push({
+                            type: 'warning',
+                            title: `Sentiment Declining: ${cat}`,
+                            message: `Sentiment dropped from ${previous.avgSentiment.toFixed(2)} to ${latest.avgSentiment.toFixed(2)} this month.`
+                        });
+                    }
+                });
+            }
+
+            // Volume spike
+            const monthlyVolumes = {};
+            filteredReviews.forEach(r => {
+                const month = r.date.toISOString().slice(0, 7);
+                monthlyVolumes[month] = (monthlyVolumes[month] || 0) + 1;
+            });
+
+            const volumes = Object.values(monthlyVolumes).sort((a, b) => a - b);
+            const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+            const maxVolume = Math.max(...volumes);
+
+            if (maxVolume > avgVolume * 1.5) {
+                alerts.push({
+                    type: 'info',
+                    title: 'Review Volume Spike Detected',
+                    message: `Peak month had ${maxVolume} reviews, ${(maxVolume / avgVolume).toFixed(1)}x the average.`
+                });
+            }
+
+            const container = document.getElementById('alertsContainer');
+            if (alerts.length === 0) {
+                container.innerHTML = '<div style="color: #94a3b8; text-align: center; padding: 2rem;">No alerts at this time. Dashboard is nominal.</div>';
+            } else {
+                container.innerHTML = alerts.map(alert => `
+                    <div class="alert-card">
+                        <div class="alert-icon">${alert.type === 'warning' ? '⚠️' : 'ℹ️'}</div>
+                        <div class="alert-content">
+                            <h3>${alert.title}</h3>
+                            <p>${alert.message}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateReviewTable() {
+            const samples = filteredReviews.slice(0, 20);
+            const tbody = document.getElementById('reviewTableBody');
+
+            tbody.innerHTML = samples.map(review => {
+                const sentimentColor = review.sentimentClass === 'positive' ? '#10b981' :
+                                       review.sentimentClass === 'negative' ? '#ef4444' : '#f59e0b';
+
+                return `
+                    <tr style="cursor: pointer;" onclick="alert('Full Review:\\n\\n' + '${review.text.replace(/'/g, "\\'")}')">
+                        <td>${review.date.toISOString().slice(0, 10)}</td>
+                        <td>${review.category}</td>
+                        <td>${review.product}</td>
+                        <td>⭐ ${review.rating}</td>
+                        <td><span class="sentiment-badge ${review.sentimentClass === 'positive' ? 'badge-positive' : review.sentimentClass === 'negative' ? 'badge-negative' : 'badge-neutral'}">${review.sentimentClass}</span></td>
+                        <td>
+                            <div class="sentiment-bar">
+                                <div class="sentiment-bar-fill" style="width: ${(review.sentiment + 1) * 50}%; background: ${sentimentColor};"></div>
+                            </div>
+                            ${review.sentiment.toFixed(2)}
+                        </td>
+                        <td>
+                            <div class="topics-tags">
+                                ${review.topics.slice(0, 2).map(t => `<div class="topic-tag">${t}</div>`).join('')}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+
+            // Event listeners
+            document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+            document.getElementById('dateFrom').addEventListener('change', applyFilters);
+            document.getElementById('dateTo').addEventListener('change', applyFilters);
+        });
+    </script>
+</body>
+</html>
