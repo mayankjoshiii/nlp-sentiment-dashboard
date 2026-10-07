@@ -1,6 +1,8 @@
 # NLP Sentiment & Text Analytics Engine
 
-A production-quality **sentiment analysis and NLP dashboard** built entirely in a single HTML file with embedded JavaScript. This portfolio project demonstrates advanced NLP techniques applied to business analytics, designed for analyzing product reviews at scale.
+> **Demo on simulated data.** Every number on this dashboard is generated in the browser by a random number generator, so the figures are illustrative. They are not results from real company data or a trained production model. The project shows how the analysis and the interactive visuals work, built as a single HTML file with Plotly.js.
+
+A **sentiment analysis and NLP dashboard** built entirely in a single HTML file with embedded JavaScript. This portfolio project demonstrates advanced NLP techniques applied to business analytics, designed for analyzing product reviews at scale.
 
 **Live Demo**: Open `index.html` in any modern browser.
 
@@ -428,5 +430,5 @@ Contributions welcome! Please:
 
 **Last Updated**: 2026-03-26
 
-**Status**: Production-Ready ✓
+**Status**: Portfolio demo on simulated data
 
